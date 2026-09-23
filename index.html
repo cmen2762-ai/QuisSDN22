@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotionQuiz Edu - Game Edukasi Interaktif Kamera</title>
+    
+    <!-- Favicon Logo -->
+    <link rel="icon" type="image/png" href="https://iili.io/nutWui7.png">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zoneA: '#2563eb',
+                        zoneB: '#db2777',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        @keyframes pulseScale {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .animate-pulse-scale {
+            animation: pulseScale 0.6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between overflow-x-hidden select-none">
+
+    <!-- MASTER PERSISTENT WEBCAM VIDEO -->
+    <video id="masterWebcamVideo" autoplay playsinline muted class="fixed top-0 left-0 w-1 h-1 opacity-0 pointer-events-none z-0"></video>
+
+    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('menu')">
+                <img src="https://iili.io/nutWui7.png" alt="MotionQuiz Logo" class="w-10 h-10 rounded-xl object-cover shadow-lg shadow-blue-500/30 border border-slate-700" onerror="this.onerror=null; this.src='https://iili.io/nutWui7.th.png';">
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-pink-400">
+                        MotionQuiz Edu
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Kuis Interaktif SD Kelas 1 - 6</p>
+                </div>
+            </div>
+
+            <!-- Quick Header Controls -->
+            <div class="flex items-center gap-2">
+                <!-- Google Sheet Sync Badge -->
+                <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold">
+                    <i class="fa-solid fa-cloud-arrow-down animate-bounce"></i>
+                    <span>Tersinkron Sheet</span>
+                </div>
+
+                <button id="soundToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold transition flex items-center gap-2">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-blue-400"></i>
+                    <span class="hidden sm:inline">Suara</span>
+                </button>
+                <button onclick="openAdminModal()" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 shadow-lg shadow-orange-500/20">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Panel Admin</span>
+                </button>
+                <button onclick="openHelpModal()" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition">
+                    <i class="fa-solid fa-circle-question text-yellow-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col justify-center">
+
+        <!-- MENU VIEW -->
+        <section id="menuView" class="space-y-5 py-2">
+            <!-- Hero Banner Title -->
+            <div class="text-center max-w-2xl mx-auto space-y-2">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 inline-block">
+                    <i class="fa-solid fa-book-bookmark mr-1"></i> Kurikulum SD Terlengkap
+                </span>
+                <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">
+                    Uji <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Pengetahuanmu!</span>
+                </h2>
+                <p class="text-slate-300 text-xs md:text-sm">
+                    Pilih tingkat kelas dan mata pelajaran. Tentukan jawaban <strong class="text-blue-400">A (Kiri)</strong> atau <strong class="text-pink-400">B (Kanan)</strong> bersama-sama!
+                </p>
+            </div>
+
+            <!-- Grade Level Selector Tabs -->
+            <div class="max-w-4xl mx-auto space-y-2">
+                <h3 class="text-slate-400 font-bold text-center text-xs tracking-wider uppercase">
+                    <i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i> Pilih Tingkat Kelas SD:
+                </h3>
+                <div class="flex flex-wrap items-center justify-center gap-1.5" id="gradeTabsContainer">
+                    <!-- Dynamic grade buttons injected via JS -->
+                </div>
+            </div>
+
+            <!-- Subject Selection Grid -->
+            <div class="max-w-4xl mx-auto space-y-2">
+                <h3 class="text-slate-400 font-bold text-center text-xs tracking-wider uppercase">
+                    <i class="fa-solid fa-icons text-pink-400 mr-1"></i> Pilih Mata Pelajaran:
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="subjectGrid">
+                    <!-- Dynamic subjects injected via JS -->
+                </div>
+            </div>
+
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-2xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-video text-blue-400"></i>
+                            <span class="font-bold text-xs text-slate-200">Pratinjau Tampilan Kamera Kelas</span>
+                        </div>
+                        <span id="cameraStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 font-semibold border border-yellow-500/30">
+                            Memeriksa Kamera...
+                        </span>
+                    </div>
+
+                    <!-- Live Camera Canvas Container -->
+                    <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                        <canvas id="menuPreviewCanvas" class="w-full h-full object-cover"></canvas>
+                        
+                        <div id="cameraPlaceholder" class="absolute text-center p-4 space-y-3 bg-slate-950/90 inset-0 flex flex-col items-center justify-center hidden">
+                            <i class="fa-solid fa-camera text-3xl text-slate-600"></i>
+                            <p class="text-xs text-slate-400">Izinkan akses kamera untuk memulai permainan.</p>
+                            <button onclick="initCamera()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/30">
+                                <i class="fa-solid fa-power-off mr-1"></i> Nyalakan Kamera Web
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Start Button -->
+                    <button onclick="startGame()" id="btnStartGame" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-pink-600 hover:from-blue-500 hover:via-indigo-500 hover:to-pink-500 text-white font-black text-sm shadow-xl shadow-indigo-600/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i> MULAI PERMAINAN
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- GAMEPLAY VIEW -->
+        <section id="gameView" class="hidden space-y-3 my-auto max-w-4xl mx-auto w-full">
+
+            <!-- Top HUD Header -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-3 shadow-xl flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span id="hudGradeBadge" class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-xs">
+                        Kelas 1 SD
+                    </span>
+                    <span id="hudSubjectBadge" class="px-3 py-1 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold text-xs">
+                        Matematika
+                    </span>
+                    <div class="text-slate-300 text-xs font-semibold ml-1">
+                        Soal <span id="hudCurrentQ" class="text-white font-bold text-sm">1</span> / <span id="hudTotalQ" class="text-slate-400">10</span>
+                    </div>
+                </div>
+
+                <!-- Timer Bar -->
+                <div id="hudTimerContainer" class="flex-1 max-w-xs mx-auto">
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-slate-400 font-medium"><i class="fa-regular fa-clock text-yellow-400 mr-1"></i> Waktu Pikir</span>
+                        <span id="hudTimerText" class="font-bold text-yellow-400">20s</span>
+                    </div>
+                    <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700">
+                        <div id="hudTimerBar" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Pause Button & Controls -->
+                <div class="flex items-center gap-2">
+                    <button onclick="pauseGame()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-slate-200 transition text-xs font-semibold">
+                        <i class="fa-solid fa-pause"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- QUESTION CARD -->
+            <div class="bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 shadow-2xl text-center space-y-1 relative overflow-hidden">
+                <span class="text-[11px] font-bold tracking-widest text-indigo-400 uppercase">Pertanyaan Kuis</span>
+                <h3 id="questionText" class="text-xl md:text-3xl font-extrabold text-white tracking-wide leading-snug">
+                    Memuat Pertanyaan...
+                </h3>
+            </div>
+
+            <!-- DUAL CAMERA SCREEN -->
+            <div class="relative w-full aspect-[16/9] max-h-[440px] bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl flex">
+
+                <!-- LIVE CAMERA CANVAS FOR GAMEPLAY -->
+                <canvas id="gameCanvas" class="absolute inset-0 w-full h-full object-cover z-0"></canvas>
+
+                <!-- SPLIT OVERLAY: LEFT SIDE (OPTION A) -->
+                <div id="zoneA" class="relative flex-1 h-full border-r-2 border-dashed border-blue-400/50 flex flex-col justify-between p-4 z-10 pointer-events-none">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-blue-600 text-white font-black text-xs md:text-sm shadow-lg shadow-blue-600/40 border border-blue-400/40">
+                            OPSI A (KIRI)
+                        </span>
+                    </div>
+
+                    <div class="my-auto text-center px-2">
+                        <div id="boxOptA" class="inline-block bg-slate-900/85 backdrop-blur border-2 border-blue-500/80 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition">
+                            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-widest block mb-0.5">Jawaban A</span>
+                            <span id="optAText" class="text-xl md:text-3xl font-extrabold text-white tracking-wide">
+                                ---
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CENTER DIVIDER GRAPHIC -->
+                <div class="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-8 z-20 pointer-events-none flex flex-col items-center justify-center">
+                    <div class="w-1 h-full bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 opacity-60"></div>
+                    <div class="absolute bg-slate-900 border-2 border-purple-500 text-purple-300 font-black text-[11px] rounded-full w-7 h-7 flex items-center justify-center shadow-lg">
+                        VS
+                    </div>
+                </div>
+
+                <!-- SPLIT OVERLAY: RIGHT SIDE (OPTION B) -->
+                <div id="zoneB" class="relative flex-1 h-full border-l-2 border-dashed border-pink-400/50 flex flex-col justify-between p-4 z-10 pointer-events-none">
+                    <div class="flex items-center justify-between flex-row-reverse">
+                        <span class="px-3 py-1 rounded-full bg-pink-600 text-white font-black text-xs md:text-sm shadow-lg shadow-pink-600/40 border border-pink-400/40">
+                            OPSI B (KANAN)
+                        </span>
+                    </div>
+
+                    <div class="my-auto text-center px-2">
+                        <div id="boxOptB" class="inline-block bg-slate-900/85 backdrop-blur border-2 border-pink-500/80 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition">
+                            <span class="text-[10px] font-bold text-pink-400 uppercase tracking-widest block mb-0.5">Jawaban B</span>
+                            <span id="optBText" class="text-xl md:text-3xl font-extrabold text-white tracking-wide">
+                                ---
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5-SECOND COUNTDOWN OVERLAY AFTER THINKING TIME -->
+                <div id="countdownOverlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 flex flex-col items-center justify-center text-center p-6 hidden">
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30 mb-3">
+                        <i class="fa-regular fa-clock mr-1"></i> Waktu Pikir Habis!
+                    </span>
+                    <div id="cdNumber" class="text-7xl md:text-9xl font-black text-amber-400 animate-pulse my-2">
+                        5
+                    </div>
+                    <p class="text-xs text-slate-400">Pengungkapan Jawaban Benar Dalam Hitungan Mundur...</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RESULT VIEW -->
+        <section id="resultView" class="hidden space-y-6 max-w-2xl mx-auto my-auto py-4">
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 text-center space-y-5 shadow-2xl relative overflow-hidden">
+                <div class="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mx-auto border border-amber-500/30">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-3xl font-black text-white">Ronde Selesai!</h2>
+                    <p class="text-xs text-slate-400 mt-1">Hasil Perolehan Nilai Kamu</p>
+                </div>
+
+                <div class="max-w-xs mx-auto bg-slate-900 border border-slate-700/80 rounded-2xl p-4">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider font-bold">Akurasi Jawaban</div>
+                    <div id="resAccuracy" class="text-3xl font-black text-emerald-400 mt-1">0 / 0</div>
+                </div>
+
+                <div id="resBadgeMsg" class="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 text-blue-300 text-xs font-medium">
+                    Kerja Bagus!
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button onclick="startGame()" class="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-indigo-600/30">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Main Lagi
+                    </button>
+                    <button onclick="switchView('menu')" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition">
+                        <i class="fa-solid fa-house mr-1"></i> Kembali ke Menu
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ADMIN MODAL -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 hidden overflow-y-auto">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 md:p-6 shadow-2xl relative my-auto min-h-[520px] flex flex-col justify-between">
+
+            <!-- Close Button (X) - Only visible when in Login Form -->
+            <button id="adminModalCloseBtn" onclick="closeAdminModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl transition z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- LOGIN FORM (IF NOT LOGGED IN) -->
+            <div id="adminLoginForm" class="max-w-md mx-auto my-auto w-full space-y-5 py-4">
+                <div class="flex items-center gap-3 border-b border-slate-700 pb-4">
+                    <img src="https://iili.io/nutWui7.png" alt="Logo Admin" class="w-12 h-12 rounded-2xl object-cover shadow-lg shadow-orange-500/20 border border-slate-700" onerror="this.onerror=null; this.src='https://iili.io/nutWui7.th.png';">
+                    <div>
+                        <h3 class="text-2xl font-black text-white">Panel Admin MotionQuiz</h3>
+                        <p class="text-xs text-slate-400">Masuk Untuk Kelola & Buat Soal</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 text-xs text-slate-300 space-y-1">
+                    <p class="font-bold text-amber-400"><i class="fa-solid fa-lock mr-1"></i> Area Akses Khusus Guru / Admin</p>
+                    <p>Silakan masukkan Username dan Kata Sandi Admin untuk masuk.</p>
+                </div>
+                <div id="adminLoginErr" class="hidden p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-semibold">
+                    Username atau Kata Sandi Admin salah!
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-slate-400 font-semibold block mb-1">Username Admin:</label>
+                        <input type="text" id="adminUsernameInput" placeholder="Masukkan Username..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 font-semibold block mb-1">Kata Sandi (Password):</label>
+                        <input type="password" id="adminPasswordInput" placeholder="Masukkan Kata Sandi..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                    </div>
+                    <button onclick="loginAdmin()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm shadow-lg shadow-orange-500/20 transition">
+                        <i class="fa-solid fa-right-to-bracket mr-1.5"></i> Masuk Sebagai Admin
+                    </button>
+                </div>
+            </div>
+
+            <!-- ADMIN DASHBOARD PANEL (WHEN LOGGED IN) -->
+            <div id="adminDashboard" class="hidden flex-1 flex flex-col md:flex-row gap-5">
+                <!-- SIDEBAR NAVIGATION -->
+                <div class="w-full md:w-64 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between shrink-0 space-y-4">
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+                            <img src="https://iili.io/nutWui7.png" alt="Logo Admin" class="w-10 h-10 rounded-xl object-cover shadow-md shadow-orange-500/20 border border-slate-700" onerror="this.onerror=null; this.src='https://iili.io/nutWui7.th.png';">
+                            <div class="overflow-hidden">
+                                <h4 class="font-extrabold text-sm text-white leading-tight">Admin Panel</h4>
+                                <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Terhubung
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- SIDEBAR MENU BUTTONS -->
+                        <div class="space-y-2">
+                            <button id="adminTabBtnNew" onclick="switchAdminTab('new')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md">
+                                <i class="fa-solid fa-plus-circle text-sm"></i>
+                                <span>Buat Soal Baru</span>
+                            </button>
+                            <button id="adminTabBtnList" onclick="switchAdminTab('list')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center justify-between gap-2 transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-list-check text-sm text-indigo-400"></i>
+                                    <span>Daftar Soal Kustom</span>
+                                </div>
+                                <span id="adminCustomQCountNav" class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-black text-[10px] border border-indigo-500/30">0</span>
+                            </button>
+                            <button id="adminTabBtnSheet" onclick="switchAdminTab('sheet')" class="w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
+                                <i class="fa-file-excel fa-regular text-sm text-emerald-400"></i>
+                                <span>Integrasi Google Sheets</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- LOGOUT BUTTON AT SIDEBAR BOTTOM -->
+                    <button onclick="logoutAdmin()" class="w-full py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Keluar Admin</span>
+                    </button>
+                </div>
+
+                <!-- CONTENT AREA -->
+                <div class="flex-1 bg-slate-900/50 border border-slate-700/80 rounded-2xl p-4 md:p-6 overflow-y-auto">
+                    
+                    <!-- TAB 1: FORM BUAT SOAL BARU -->
+                    <div id="adminViewNew" class="space-y-4">
+                        <div class="border-b border-slate-800 pb-3">
+                            <h4 class="text-sm font-extrabold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-pen-to-square text-amber-400"></i>
+                                <span>Tambah Pertanyaan Kustom Baru</span>
+                            </h4>
+                            <p class="text-xs text-slate-400">Isi formulir di bawah ini untuk menambahkan soal baru. Soal otomatis tersimpan ke Google Sheets jika URL terhubung.</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-slate-300 font-semibold block mb-1">Tingkat Kelas SD:</label>
+                                    <select id="customGrade" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+                                        <option value="1">Kelas 1 SD</option>
+                                        <option value="2">Kelas 2 SD</option>
+                                        <option value="3">Kelas 3 SD</option>
+                                        <option value="4">Kelas 4 SD</option>
+                                        <option value="5">Kelas 5 SD</option>
+                                        <option value="6">Kelas 6 SD</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-300 font-semibold block mb-1">Mata Pelajaran:</label>
+                                    <select id="customSubject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+                                        <option value="math">Matematika</option>
+                                        <option value="science">IPAS</option>
+                                        <option value="indo">Bahasa Indonesia</option>
+                                        <option value="paibp">PAIBP</option>
+                                        <option value="ppkn">PKN</option>
+                                        <option value="english">Bahasa Inggris</option>
+                                        <option value="pjok">PJOK</option>
+                                        <option value="bam">BAM (Budaya Alam Minangkabau)</option>
+                                        <option value="pq">PQ (Pendidikan Al-Qur'an)</option>
+                                        <option value="seni">Seni Budaya</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-slate-300 font-semibold block mb-1">Pertanyaan / Soal Kuis:</label>
+                                <input type="text" id="customQText" placeholder="Contoh: Ibu kota negara Indonesia adalah..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-blue-400 font-bold block mb-1">Jawaban Opsi A (Kiri):</label>
+                                    <input type="text" id="customOptA" placeholder="Contoh: Jakarta" class="w-full bg-slate-800 border border-blue-500/50 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-400">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-pink-400 font-bold block mb-1">Jawaban Opsi B (Kanan):</label>
+                                    <input type="text" id="customOptB" placeholder="Contoh: Nusantara / Kalimantan" class="w-full bg-slate-800 border border-pink-500/50 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-pink-400">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-xs text-slate-300 font-semibold block mb-1">Kunci Jawaban Benar:</label>
+                                <select id="customCorrectOpt" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+                                    <option value="A">Opsi A (Kiri) adalah Jawaban Benar</option>
+                                    <option value="B">Opsi B (Kanan) adalah Jawaban Benar</option>
+                                </select>
+                            </div>
+
+                            <button onclick="addCustomQuestion()" class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 mt-2">
+                                <i class="fa-solid fa-plus-circle text-sm"></i>
+                                <span>Simpan & Tambah Ke Daftar Soal</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: DAFTAR SOAL KUSTOM -->
+                    <div id="adminViewList" class="space-y-4 hidden">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                                <h4 class="text-sm font-extrabold text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-indigo-400"></i>
+                                    <span>Daftar Soal Kustom (<span id="adminCustomQCount">0</span>)</span>
+                                </h4>
+                                <p class="text-xs text-slate-400">Kelola atau hapus pertanyaan kustom yang telah dibuat.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="fetchSheetData()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                                    <i class="fa-solid fa-rotate"></i> Sinkron Ulang
+                                </button>
+                                <button onclick="clearCustomQuestions()" class="text-xs text-red-400 hover:text-red-300 hover:underline font-bold flex items-center gap-1 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
+                                    <i class="fa-solid fa-trash"></i> Hapus Semua
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="adminCustomQList" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                            <!-- Dynamic custom list -->
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: PENGATURAN GOOGLE SHEETS -->
+                    <div id="adminViewSheet" class="space-y-4 hidden">
+                        <div class="border-b border-slate-800 pb-3">
+                            <h4 class="text-sm font-extrabold text-white flex items-center gap-2">
+                                <i class="fa-file-excel fa-regular text-emerald-400"></i>
+                                <span>Pengaturan URL Google Sheets Web App</span>
+                            </h4>
+                            <p class="text-xs text-slate-400">Masukkan URL Web App Google Apps Script untuk mensinkronkan soal secara online antar browser.</p>
+                        </div>
+
+                        <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
+                            <div>
+                                <label class="text-xs text-slate-300 font-semibold block mb-1">URL Google Apps Script Web App:</label>
+                                <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/AKfycbx.../exec" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400">
+                            </div>
+
+                            <button onclick="saveGasUrlSetting()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>Simpan URL & Sinkronkan Sekarang</span>
+                            </button>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs text-slate-300">
+                            <h5 class="font-bold text-amber-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-info"></i> Petunjuk Tabel Google Sheets
+                            </h5>
+                            <p class="text-[11px] leading-relaxed text-slate-400">
+                                Google Sheet akan membuat tab otomatis bernama <strong>Soal MotionQuiz</strong> dengan kolom header:
+                            </p>
+                            <div class="p-2.5 bg-slate-950 rounded-xl font-mono text-[10px] text-emerald-400 border border-slate-800">
+                                Kelas | Mata Pelajaran | Pertanyaan / Soal Kuis | Jawaban Opsi A | Jawaban Opsi B | Kunci Jawaban Yang Benar
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+            <button onclick="closeHelpModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Cara Bermain MotionQuiz</h3>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+                <div class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+                    <p>Pilih tingkat kelas SD dan mata pelajaran yang ingin dimainkan.</p>
+                </div>
+                <div class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+                    <p>Soal dan Pilihan A / B akan muncul di layar bersamaan dengan video live kamera kelas.</p>
+                </div>
+                <div class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
+                    <p>Diskusi bersama selama Waktu Pikir. Setelah waktu habis, hitungan mundur <strong>5 detik</strong> berjalan lalu jawaban yang benar akan otomatis terbuka!</p>
+                </div>
+            </div>
+            <button onclick="closeHelpModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm transition">
+                Saya Mengerti, Ayo Main!
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        <p>MotionQuiz Edu &copy; 2026 - Kuis Edukasi Interaktif Kelas SD</p>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* Global State Variables */
+        let currentGrade = 'all'; 
+        let currentSubject = 'math';
+        let currentQuestions = [];
+        let questionIndex = 0;
+        let correctAnswersCount = 0;
+        let timerInterval = null;
+        let timeLeft = 20;
+        let isAudioMuted = false;
+        let isGameActive = false;
+        let isProcessingAnswer = false;
+        let activeView = 'menu';
+
+        /* Admin & Google Sheets Sync Variables */
+        let isAdminLoggedIn = false;
+        let currentAdminTab = 'new';
+        const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyo7rSV3FN8O7biP0WxyWI04Vx9Q0JCe1vsQKGjnaFvqb5Vn_NwD0TYH5BzCeFWUYEl/exec';
+        let gasApiUrl = localStorage.getItem('motionquiz_gas_url') || DEFAULT_GAS_URL;
+
+        /* Camera Engine Variables */
+        let masterStream = null;
+        let audioCtx = null;
+
+        /* Mario BGM Chiptune Engine Variables */
+        let bgmNoteIndex = 0;
+        let bgmTimeoutId = null;
+
+        // Sequence Note Frequencies (Hz) for Super Mario Bros Main Theme
+        const MARIO_NOTES = [
+            // Intro Hook
+            { note: 659.25, dur: 0.12, pause: 0.04 }, // E5
+            { note: 659.25, dur: 0.12, pause: 0.12 }, // E5
+            { note: 659.25, dur: 0.12, pause: 0.12 }, // E5
+            { note: 523.25, dur: 0.12, pause: 0.04 }, // C5
+            { note: 659.25, dur: 0.12, pause: 0.12 }, // E5
+            { note: 783.99, dur: 0.22, pause: 0.22 }, // G5
+            { note: 392.00, dur: 0.22, pause: 0.22 }, // G4
+
+            // Section A
+            { note: 523.25, dur: 0.18, pause: 0.12 }, // C5
+            { note: 392.00, dur: 0.18, pause: 0.12 }, // G4
+            { note: 329.63, dur: 0.18, pause: 0.12 }, // E4
+            { note: 440.00, dur: 0.15, pause: 0.08 }, // A4
+            { note: 493.88, dur: 0.15, pause: 0.08 }, // B4
+            { note: 466.16, dur: 0.15, pause: 0.04 }, // Bb4
+            { note: 440.00, dur: 0.18, pause: 0.10 }, // A4
+
+            { note: 392.00, dur: 0.12, pause: 0.04 }, // G4
+            { note: 659.25, dur: 0.12, pause: 0.04 }, // E5
+            { note: 783.99, dur: 0.12, pause: 0.04 }, // G5
+            { note: 880.00, dur: 0.18, pause: 0.08 }, // A5
+            { note: 698.46, dur: 0.12, pause: 0.04 }, // F5
+            { note: 783.99, dur: 0.12, pause: 0.08 }, // G5
+            { note: 659.25, dur: 0.18, pause: 0.08 }, // E5
+            { note: 523.25, dur: 0.12, pause: 0.04 }, // C5
+            { note: 587.33, dur: 0.12, pause: 0.04 }, // D5
+            { note: 493.88, dur: 0.18, pause: 0.18 }  // B4
+        ];
+
+        /* Comprehensive SD Question Database (Kelas 1 - 6) */
+        const QUESTION_DATABASE = {
+            // KELAS 1 SD
+            'k1_math': [
+                { q: "Berapakah hasil dari 8 + 5 ?", a: "13", b: "12", correct: "A" },
+                { q: "Berapakah hasil dari 15 - 7 ?", a: "9", b: "8", correct: "B" },
+                { q: "Benda manakah yang berbentuk lingkaran?", a: "Roda Sepeda", b: "Buku Tulis", correct: "A" },
+                { q: "Angka manakah yang lebih besar: 14 atau 9?", a: "14", b: "9", correct: "A" },
+                { q: "Angka setelah bilangan 19 adalah...", a: "20", b: "18", correct: "A" },
+                { q: "Berapakah hasil dari 6 + 6 ?", a: "12", b: "14", correct: "A" },
+                { q: "Jumlah jari pada kedua tangan manusia adalah...", a: "8", b: "10", correct: "B" },
+                { q: "Bangun datar yang memiliki 3 sisi dinamakan...", a: "Segitiga", b: "Persegi", correct: "A" },
+                { q: "Berapakah hasil dari 18 - 9 ?", a: "9", b: "8", correct: "A" },
+                { q: "Dodi punya 5 kelereng, diberi ayah 4 lagi. Jumlah kelereng Dodi...", a: "9", b: "10", correct: "A" }
+            ],
+            'k1_science': [
+                { q: "Kita mendengarkan suara dan musik menggunakan panca indera...", a: "Telinga", b: "Mata", correct: "A" },
+                { q: "Ayam dan kucing termasuk kelompok benda...", a: "Hidup", b: "Mati / Tak Hidup", correct: "A" },
+                { q: "Bagian tubuh yang digunakan untuk memegang benda adalah...", a: "Tangan", b: "Kaki", correct: "A" },
+                { q: "Tumbuhan membutuhkan air dan ... untuk tumbuh sehat.", a: "Sinar Matahari", b: "Plastik", correct: "A" },
+                { q: "Hewan Kucing bergerak dengan cara...", a: "Berjalan & Berlari", b: "Terbang", correct: "A" },
+                { q: "Kita melihat pemandangan indah dengan panca indera...", a: "Mata", b: "Hidung", correct: "A" },
+                { q: "Meja dan batu termasuk contoh benda...", a: "Mati / Tak Hidup", b: "Hidup", correct: "A" },
+                { q: "Bebek berkembang biak dengan cara...", a: "Bertelur", b: "Melahirkan", correct: "A" },
+                { q: "Bagian tubuh di dalam mulut untuk mengunyah makanan adalah...", a: "Gigi", b: "Rambut", correct: "A" },
+                { q: "Agar tubuh selalu sehat dan kuat kita harus rajin...", a: "Makan Makanan Bergizi", b: "Jarang Mandi", correct: "A" }
+            ],
+            'k1_indo': [
+                { q: "Huruf vokal terdiri dari huruf...", a: "A, I, U, E, O", b: "B, C, D, F, G", correct: "A" },
+                { q: "Ketika diberi hadiah oleh guru, kita harus mengucapkan...", a: "Terima Kasih", b: "Minta Maaf", correct: "A" },
+                { q: "Kalimat sapaan yang santun di pagi hari adalah...", a: "Selamat Pagi", b: "Selamat Tidur", correct: "A" },
+                { q: "Eja kata ini: K - U - C - I - N - G dibaca...", a: "Kucing", b: "Kelinci", correct: "A" },
+                { q: "Lawan kata (antonim) dari kata 'Tinggi' adalah...", a: "Pendek", b: "Panjang", correct: "A" },
+                { q: "Jika kita tidak sengaja berbuat salah, kita wajib mengucapkan...", a: "Maaf", b: "Terima Kasih", correct: "A" },
+                { q: "Tempat siswa menuntut ilmu bersama guru dinamakan...", a: "Sekolah", b: "Pasar", correct: "A" },
+                { q: "Hewan yang bersuara 'Mbee... Mbee...' adalah...", a: "Kambing", b: "Anjing", correct: "A" },
+                { q: "Ibu memotong buah manis menggunakan...", a: "Pisau", b: "Sendok", correct: "A" },
+                { q: "Lawan kata dari 'Besar' adalah...", a: "Kecil", b: "Lebar", correct: "A" }
+            ],
+            'k1_ppkn': [
+                { q: "Simbol Sila Pertama Pancasila adalah gambar...", a: "Bintang", b: "Rantai Emas", correct: "A" },
+                { q: "Bendera Kebangsaan Negara Indonesia berwarna...", a: "Merah Putih", b: "Merah Kuning", correct: "A" },
+                { q: "Sebelum makan dan minum sebaiknya kita...", a: "Berdoa", b: "Langsung Tidur", correct: "A" },
+                { q: "Dasar Negara Republik Indonesia adalah...", a: "Pancasila", b: "UUD 1945", correct: "A" },
+                { q: "Simbol Sila Kedua Pancasila adalah gambar...", a: "Rantai Emas", b: "Pohon Beringin", correct: "A" },
+                { q: "Kepada Bapak dan Ibu Guru di sekolah kita wajib...", a: "Hormat dan Patuh", b: "Abaikan", correct: "A" },
+                { q: "Lambang Negara Indonesia adalah Burung...", a: "Garuda", b: "Elang", correct: "A" },
+                { q: "Menjaga kebersihan dan keindahan kelas adalah tugas...", a: "Semua Siswa", b: "Guru Saja", correct: "A" },
+                { q: "Bersatu kita teguh, bercerai kita...", a: "Runtuh", b: "Jatuh", correct: "A" },
+                { q: "Merapikan alat main sendiri setelah bermain menunjukkan sikap...", a: "Mandiri", b: "Pemalas", correct: "A" }
+            ],
+            'k1_english': [
+                { q: "What is the English word for 'Merah'?", a: "Red", b: "Blue", correct: "A" },
+                { q: "The English word 'Cat' means...", a: "Kucing", b: "Anjing", correct: "A" },
+                { q: "How do you say number '5' in English?", a: "Five", b: "Four", correct: "A" },
+                { q: "'Book' in Indonesian language means...", a: "Buku", b: "Pensil", correct: "A" },
+                { q: "'Good Morning' in Indonesian language means...", a: "Selamat Pagi", b: "Selamat Malam", correct: "A" },
+                { q: "What is the English word for 'Kelinci'?", a: "Rabbit", b: "Duck", correct: "A" },
+                { q: "1, 2, 3, 4... The next number is...", a: "Five (5)", b: "Six (6)", correct: "A" },
+                { q: "'Teacher' in Indonesian language means...", a: "Guru", b: "Murid", correct: "A" },
+                { q: "What is the English word for 'Kuning'?", a: "Yellow", b: "Green", correct: "A" },
+                { q: "What is the English word for 'Anjing'?", a: "Dog", b: "Fish", correct: "A" }
+            ],
+
+            // KELAS 2 SD
+            'k2_math': [
+                { q: "Berapakah hasil penjumlahan 25 + 38 ?", a: "63", b: "53", correct: "A" },
+                { q: "Berapakah hasil perkalian 5 x 4 ?", a: "20", b: "25", correct: "A" },
+                { q: "Jarum pendek di angka 3, jarum panjang di angka 12 menunjukkan jam...", a: "03.00", b: "12.03", correct: "A" },
+                { q: "Hasil dari 100 - 46 adalah...", a: "54", b: "64", correct: "A" },
+                { q: "Berapakah hasil perkalian 3 x 8 ?", a: "24", b: "28", correct: "A" },
+                { q: "Bangun datar persegi memiliki ... sisi yang sama panjang.", a: "4 Sisi", b: "3 Sisi", correct: "A" },
+                { q: "Berapakah hasil pembagian 20 : 4 ?", a: "5", b: "4", correct: "A" },
+                { q: "Nilai tempat angka 7 pada bilangan 372 adalah...", a: "Puluhan", b: "Ratusan", correct: "A" },
+                { q: "Berapakah hasil dari 150 + 250 ?", a: "400", b: "350", correct: "A" },
+                { q: "Berapakah hasil perkalian 4 x 6 ?", a: "24", b: "20", correct: "A" }
+            ],
+            'k2_science': [
+                { q: "Benda cair yang dimasukkan ke freezer akan menjadi...", a: "Padat (Es)", b: "Gas", correct: "A" },
+                { q: "Sumber energi terbesar bagi kehidupan di bumi adalah...", a: "Matahari", b: "Lampu", correct: "A" },
+                { q: "Hewan yang dapat hidup di dua alam (darat & air) disebut...", a: "Amfibi", b: "Mamalia", correct: "A" },
+                { q: "Es batu jika dipanaskan di udara terbuka akan...", a: "Mencair", b: "Membeku", correct: "A" },
+                { q: "Ikan bernapas di dalam air menggunakan organ...", a: "Insang", b: "Paru-paru", correct: "A" },
+                { q: "Benda cair bentuknya selalu menyesuaikan dengan...", a: "Wadahnya", b: "Tetap Bulat", correct: "A" },
+                { q: "Tumbuhan yang memiliki batang berduri contohnya adalah...", a: "Mawar", b: "Pisang", correct: "A" },
+                { q: "Benda yang dapat ditarik oleh magnet adalah benda berbahan...", a: "Besi / Logam", b: "Plastik", correct: "A" },
+                { q: "Burung dapat terbang tinggi di udara karena memiliki...", a: "Sayap dan Bulu", b: "Sirip", correct: "A" },
+                { q: "Bayangan tubuh kita terlihat paling pendek saat matahari berada di...", a: "Atas Kepala (Siang)", b: "Pagi Hari", correct: "A" }
+            ],
+
+            // KELAS 3 SD
+            'k3_math': [
+                { q: "Pecahan 1/2 dibaca...", a: "Satu per dua / Setengah", b: "Dua per satu", correct: "A" },
+                { q: "Berapakah hasil dari 7 x 9 ?", a: "63", b: "56", correct: "A" },
+                { q: "Hasil pembagian 144 : 12 adalah...", a: "12", b: "14", correct: "A" },
+                { q: "Keliling persegi yang memiliki panjang sisi 6 cm adalah...", a: "24 cm", b: "36 cm", correct: "A" },
+                { q: "Hasil penjumlahan pecahan 3/5 + 1/5 adalah...", a: "4/5", b: "4/10", correct: "A" },
+                { q: "Panjang 1 kilometer (km) sama dengan ... meter.", a: "1.000 Meter", b: "100 Meter", correct: "A" },
+                { q: "Berapakah hasil dari 8 x 8 ?", a: "64", b: "72", correct: "A" },
+                { q: "Bangun datar yang tidak memiliki sudut sama sekali adalah...", a: "Lingkaran", b: "Persegi Panjang", correct: "A" },
+                { q: "Berapakah hasil dari 250 x 4 ?", a: "1.000", b: "800", correct: "A" },
+                { q: "Hasil pembagian dari 81 : 9 adalah...", a: "9", b: "8", correct: "A" }
+            ],
+
+            // KELAS 4 SD
+            'k4_math': [
+                { q: "Kelipatan Persekutuan Terkecil (KPK) dari 4 dan 6 adalah...", a: "12", b: "24", correct: "A" },
+                { q: "Faktor Persekutuan Terbesar (FPB) dari 12 dan 18 adalah...", a: "6", b: "3", correct: "A" },
+                { q: "Luas persegi panjang p=10 cm dan l=6 cm adalah...", a: "60 cm²", b: "32 cm²", correct: "A" },
+                { q: "Pecahan yang senilai dengan 2/4 adalah...", a: "1/2", b: "3/4", correct: "A" },
+                { q: "Sudut siku-siku memiliki besar sudut tepat...", a: "90 Derajat", b: "180 Derajat", correct: "A" }
+            ],
+
+            // KELAS 5 SD
+            'k5_math': [
+                { q: "Hasil penjumlahan dari 1/2 + 1/3 adalah...", a: "5/6", b: "2/5", correct: "A" },
+                { q: "Jarak peta 2 cm, skala 1 : 500.000. Jarak sebenarnya...", a: "10 km", b: "100 km", correct: "A" },
+                { q: "Volume kubus dengan rusuk 5 cm adalah...", a: "125 cm³", b: "25 cm³", correct: "A" },
+                { q: "Kecepatan 60 km/jam, waktu 2 jam. Jarak tempuhnya adalah...", a: "120 km", b: "30 km", correct: "A" }
+            ],
+
+            // KELAS 6 SD
+            'k6_math': [
+                { q: "Hasil penjumlahan bilangan bulat -15 + (-25) adalah...", a: "-40", b: "10", correct: "A" },
+                { q: "Hasil perkalian (-12) x (-5) adalah...", a: "60", b: "-60", correct: "A" },
+                { q: "Volume tabung r=7 cm dan t=10 cm adalah...", a: "1.540 cm³", b: "1.200 cm³", correct: "A" },
+                { q: "Nilai data yang paling sering muncul dinamakan...", a: "Modus", b: "Median", correct: "A" }
+            ],
+
+            custom: []
+        };
+
+        const GRADE_METADATA = [
+            { id: 'all', label: 'Semua Kelas' },
+            { id: '1', label: 'Kelas 1 SD' },
+            { id: '2', label: 'Kelas 2 SD' },
+            { id: '3', label: 'Kelas 3 SD' },
+            { id: '4', label: 'Kelas 4 SD' },
+            { id: '5', label: 'Kelas 5 SD' },
+            { id: '6', label: 'Kelas 6 SD' }
+        ];
+
+        const SUBJECT_METADATA = [
+            { id: 'math', title: 'Matematika', icon: 'fa-calculator', color: 'from-blue-600 to-cyan-500' },
+            { id: 'science', title: 'IPAS', icon: 'fa-flask', color: 'from-emerald-600 to-teal-500' },
+            { id: 'indo', title: 'Bahasa Indonesia', icon: 'fa-book-open', color: 'from-amber-500 to-orange-500' },
+            { id: 'paibp', title: 'PAIBP', icon: 'fa-book-quran', color: 'from-green-600 to-emerald-500' },
+            { id: 'ppkn', title: 'PKN', icon: 'fa-shield-halved', color: 'from-red-600 to-rose-500' },
+            { id: 'english', title: 'Bahasa Inggris', icon: 'fa-language', color: 'from-purple-600 to-pink-500' },
+            { id: 'pjok', title: 'PJOK', icon: 'fa-person-running', color: 'from-lime-600 to-green-500' },
+            { id: 'bam', title: 'BAM', icon: 'fa-landmark-dome', color: 'from-amber-600 to-yellow-500' },
+            { id: 'pq', title: 'PQ (Al-Qur\'an)', icon: 'fa-mosque', color: 'from-teal-600 to-emerald-600' },
+            { id: 'seni', title: 'Seni Budaya', icon: 'fa-palette', color: 'from-fuchsia-600 to-pink-500' },
+            { id: 'custom', title: 'Soal Kustom', icon: 'fa-pen-to-square', color: 'from-slate-600 to-slate-800' }
+        ];
+
+        // SINKRONISASI OTOMATIS GOOGLE SHEETS
+        async function fetchSheetData() {
+            if (!gasApiUrl) {
+                // Gunakan cache lokal jika URL belum diset
+                const cached = localStorage.getItem('motionquiz_custom_q');
+                if (cached) {
+                    try { QUESTION_DATABASE.custom = JSON.parse(cached); } catch(e){}
+                }
+                renderAdminCustomQuestions();
+                renderSubjects();
+                return;
+            }
+
+            const syncBadge = document.getElementById('syncBadge');
+            try {
+                if (syncBadge) syncBadge.classList.remove('hidden');
+                
+                const response = await fetch(gasApiUrl);
+                const result = await response.json();
+
+                if (result && result.status === 'success' && Array.isArray(result.data)) {
+                    QUESTION_DATABASE.custom = result.data;
+                    localStorage.setItem('motionquiz_custom_q', JSON.stringify(result.data));
+                    console.log("Terhubung ke Google Sheets: Data berhasil disinkronkan.");
+                }
+            } catch (err) {
+                console.warn("Gagal terhubung ke Google Sheets, menggunakan data lokal:", err);
+            } finally {
+                renderAdminCustomQuestions();
+                renderSubjects();
+            }
+        }
+
+        async function postQuestionToSheet(questionData) {
+            if (!gasApiUrl) return;
+
+            try {
+                await fetch(gasApiUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add',
+                        ...questionData
+                    })
+                });
+                console.log("Soal baru dikirim ke Google Sheets.");
+            } catch (err) {
+                console.error("Gagal mengirim data ke Google Sheets:", err);
+            }
+        }
+
+        async function clearSheetData() {
+            if (!gasApiUrl) return;
+            try {
+                await fetch(gasApiUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'clear' })
+                });
+            } catch (err) {}
+        }
+
+        function saveGasUrlSetting() {
+            const input = document.getElementById('gasUrlInput').value.trim();
+            gasApiUrl = input;
+            localStorage.setItem('motionquiz_gas_url', input);
+            alert("URL Google Apps Script disimpan! Memulai sinkronisasi data...");
+            fetchSheetData();
+        }
+
+        /* Audio Engine */
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (isAudioMuted) return;
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'tick') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.25);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now); osc.stop(now + 0.35);
+                } else if (type === 'win') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                }
+            } catch (e) {}
+        }
+
+        /* Super Mario BGM Synth Functions */
+        function startMarioBgm() {
+            stopMarioBgm();
+            if (isAudioMuted || !isGameActive) return;
+            initAudio();
+            bgmNoteIndex = 0;
+            playNextMarioNote();
+        }
+
+        function stopMarioBgm() {
+            if (bgmTimeoutId) {
+                clearTimeout(bgmTimeoutId);
+                bgmTimeoutId = null;
+            }
+        }
+
+        function playNextMarioNote() {
+            if (isAudioMuted || !isGameActive) return;
+            try {
+                initAudio();
+                const current = MARIO_NOTES[bgmNoteIndex];
+                if (current && current.note > 0) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square'; // Classic retro 8-bit Mario chiptune sound!
+                    osc.frequency.setValueAtTime(current.note, audioCtx.currentTime);
+                    
+                    // Comfortable background music volume
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + current.dur);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime);
+                    osc.stop(audioCtx.currentTime + current.dur);
+                }
+
+                bgmNoteIndex = (bgmNoteIndex + 1) % MARIO_NOTES.length;
+                const delayMs = (current.dur + current.pause) * 1000;
+                bgmTimeoutId = setTimeout(playNextMarioNote, delayMs);
+            } catch(e) {
+                console.warn("BGM playback error:", e);
+            }
+        }
+
+        function toggleAudio() {
+            isAudioMuted = !isAudioMuted;
+            const icon = document.getElementById('soundIcon');
+            icon.className = isAudioMuted ? 'fa-solid fa-volume-xmark text-red-400' : 'fa-solid fa-volume-high text-blue-400';
+            
+            if (isAudioMuted) {
+                stopMarioBgm();
+            } else if (isGameActive) {
+                startMarioBgm();
+            }
+        }
+
+        async function initCamera() {
+            const video = document.getElementById('masterWebcamVideo');
+            const badge = document.getElementById('cameraStatusBadge');
+            const placeholder = document.getElementById('cameraPlaceholder');
+
+            try {
+                masterStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 360 }, facingMode: "user" },
+                    audio: false
+                });
+
+                video.srcObject = masterStream;
+                await video.play().catch(() => {});
+
+                if (badge) {
+                    badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Kamera Aktif`;
+                    badge.className = "text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30";
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+
+                requestAnimationFrame(processCameraLoop);
+            } catch (err) {
+                console.warn("Camera error:", err);
+                if (badge) {
+                    badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Kamera Tidak Aktif`;
+                    badge.className = "text-[11px] px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold border border-red-500/30";
+                }
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+        }
+
+        function processCameraLoop() {
+            const video = document.getElementById('masterWebcamVideo');
+
+            if (video && video.readyState >= 2 && masterStream) {
+                if (activeView === 'menu') {
+                    renderMenuCanvas(video);
+                } else if (activeView === 'game') {
+                    renderGameCanvas(video);
+                }
+            }
+
+            requestAnimationFrame(processCameraLoop);
+        }
+
+        function renderMenuCanvas(video) {
+            const canvas = document.getElementById('menuPreviewCanvas');
+            if (!canvas) return;
+            canvas.width = 640; canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -640, 0, 640, 360);
+            ctx.restore();
+        }
+
+        function renderGameCanvas(video) {
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return;
+            canvas.width = 640; canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -640, 0, 640, 360);
+            ctx.restore();
+        }
+
+        function openAdminModal() {
+            document.getElementById('adminModal').classList.remove('hidden');
+            const closeBtn = document.getElementById('adminModalCloseBtn');
+
+            if (isAdminLoggedIn) {
+                document.getElementById('adminLoginForm').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                if (closeBtn) closeBtn.classList.add('hidden');
+                switchAdminTab('new');
+                renderAdminCustomQuestions();
+            } else {
+                document.getElementById('adminLoginForm').classList.remove('hidden');
+                document.getElementById('adminDashboard').classList.add('hidden');
+                if (closeBtn) closeBtn.classList.remove('hidden');
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function switchAdminTab(tab) {
+            currentAdminTab = tab;
+            const viewNew = document.getElementById('adminViewNew');
+            const viewList = document.getElementById('adminViewList');
+            const viewSheet = document.getElementById('adminViewSheet');
+            const btnNew = document.getElementById('adminTabBtnNew');
+            const btnList = document.getElementById('adminTabBtnList');
+            const btnSheet = document.getElementById('adminTabBtnSheet');
+
+            const activeClass = "w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-md";
+            const inactiveClass = "w-full text-left px-4 py-3 rounded-xl font-bold text-xs flex items-center gap-2.5 transition bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700";
+
+            if (viewNew) viewNew.classList.add('hidden');
+            if (viewList) viewList.classList.add('hidden');
+            if (viewSheet) viewSheet.classList.add('hidden');
+
+            if (btnNew) btnNew.className = inactiveClass;
+            if (btnList) btnList.className = inactiveClass;
+            if (btnSheet) btnSheet.className = inactiveClass;
+
+            if (tab === 'new') {
+                if (viewNew) viewNew.classList.remove('hidden');
+                if (btnNew) btnNew.className = activeClass;
+            } else if (tab === 'list') {
+                if (viewList) viewList.classList.remove('hidden');
+                if (btnList) btnList.className = activeClass;
+                renderAdminCustomQuestions();
+            } else if (tab === 'sheet') {
+                if (viewSheet) viewSheet.classList.remove('hidden');
+                if (btnSheet) btnSheet.className = activeClass;
+                document.getElementById('gasUrlInput').value = gasApiUrl;
+            }
+        }
+
+        function loginAdmin() {
+            const u = document.getElementById('adminUsernameInput').value.trim();
+            const p = document.getElementById('adminPasswordInput').value.trim();
+            const err = document.getElementById('adminLoginErr');
+
+            if (u === 'KUIS' && p === '12345') {
+                isAdminLoggedIn = true;
+                err.classList.add('hidden');
+                document.getElementById('adminLoginForm').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                
+                const closeBtn = document.getElementById('adminModalCloseBtn');
+                if (closeBtn) closeBtn.classList.add('hidden');
+
+                switchAdminTab('new');
+                renderAdminCustomQuestions();
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminUsernameInput').value = '';
+            document.getElementById('adminPasswordInput').value = '';
+            closeAdminModal();
+        }
+
+        function renderAdminCustomQuestions() {
+            const countLabel = document.getElementById('adminCustomQCount');
+            const countNav = document.getElementById('adminCustomQCountNav');
+            const list = document.getElementById('adminCustomQList');
+
+            const count = QUESTION_DATABASE.custom.length;
+            if (countLabel) countLabel.textContent = count;
+            if (countNav) countNav.textContent = count;
+
+            if (list) {
+                if (count === 0) {
+                    list.innerHTML = `<div class="text-center py-8 space-y-2">
+                        <i class="fa-solid fa-folder-open text-3xl text-slate-600"></i>
+                        <p class="text-xs text-slate-500 font-medium">Belum ada soal kustom yang dibuat.</p>
+                    </div>`;
+                } else {
+                    list.innerHTML = QUESTION_DATABASE.custom.map((item, idx) => {
+                        const subObj = SUBJECT_METADATA.find(s => s.id === item.subject);
+                        const subTitle = subObj ? subObj.title : item.subject;
+                        return `
+                        <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-3 flex items-center justify-between gap-3 text-xs shadow-md">
+                            <div class="space-y-1.5 overflow-hidden">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Kelas ${item.grade || '1'} SD</span>
+                                    <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold">${subTitle}</span>
+                                </div>
+                                <p class="font-extrabold text-white leading-snug">${idx + 1}. ${item.q}</p>
+                                <p class="text-slate-400 text-[11px]">A: <strong class="text-slate-200">${item.a}</strong> | B: <strong class="text-slate-200">${item.b}</strong> <span class="text-emerald-400 font-bold ml-1.5">(Jawaban Benar: Opsi ${item.correct})</span></p>
+                            </div>
+                            <button onclick="deleteCustomQuestion(${idx})" class="text-red-400 hover:text-red-300 p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl shrink-0 transition">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    }).join('');
+                }
+            }
+        }
+
+        function addCustomQuestion() {
+            const gradeVal = document.getElementById('customGrade').value;
+            const subjectVal = document.getElementById('customSubject').value;
+            const qText = document.getElementById('customQText').value.trim();
+            const optA = document.getElementById('customOptA').value.trim();
+            const optB = document.getElementById('customOptB').value.trim();
+            const correctOpt = document.getElementById('customCorrectOpt').value;
+
+            if (!qText || !optA || !optB) {
+                alert("Harap isi semua kolom pertanyaan dan pilihan jawaban!");
+                return;
+            }
+
+            const newQ = { 
+                grade: gradeVal,
+                subject: subjectVal,
+                q: qText, 
+                a: optA, 
+                b: optB, 
+                correct: correctOpt 
+            };
+
+            QUESTION_DATABASE.custom.push(newQ);
+            localStorage.setItem('motionquiz_custom_q', JSON.stringify(QUESTION_DATABASE.custom));
+
+            // Kirim ke Google Sheets
+            postQuestionToSheet(newQ);
+
+            document.getElementById('customQText').value = '';
+            document.getElementById('customOptA').value = '';
+            document.getElementById('customOptB').value = '';
+
+            renderAdminCustomQuestions();
+            renderSubjects();
+
+            switchAdminTab('list');
+        }
+
+        function deleteCustomQuestion(idx) {
+            QUESTION_DATABASE.custom.splice(idx, 1);
+            localStorage.setItem('motionquiz_custom_q', JSON.stringify(QUESTION_DATABASE.custom));
+            renderAdminCustomQuestions();
+            renderSubjects();
+        }
+
+        function clearCustomQuestions() {
+            if (QUESTION_DATABASE.custom.length === 0) return;
+            if (confirm("Hapus seluruh daftar soal kustom?")) {
+                QUESTION_DATABASE.custom = [];
+                localStorage.setItem('motionquiz_custom_q', JSON.stringify([]));
+                clearSheetData();
+                renderAdminCustomQuestions();
+                renderSubjects();
+            }
+        }
+
+        function renderGradeTabs() {
+            const container = document.getElementById('gradeTabsContainer');
+            if (!container) return;
+
+            container.innerHTML = GRADE_METADATA.map(g => {
+                const isActive = currentGrade === g.id;
+                return `
+                    <button onclick="selectGrade('${g.id}')" class="px-3.5 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 ring-2 ring-indigo-400' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}">
+                        <i class="fa-solid ${g.id === 'all' ? 'fa-globe' : 'fa-graduation-cap'}"></i>
+                        <span>${g.label}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectGrade(gradeId) {
+            currentGrade = gradeId;
+            renderGradeTabs();
+            renderSubjects();
+        }
+
+        function getQuestionsForSelection(grade, subject) {
+            if (subject === 'custom') {
+                if (grade === 'all') {
+                    return QUESTION_DATABASE.custom;
+                } else {
+                    return QUESTION_DATABASE.custom.filter(q => q.grade === grade);
+                }
+            }
+
+            let pool = [];
+            const gradesToScan = (grade === 'all') ? ['1', '2', '3', '4', '5', '6'] : [grade];
+
+            gradesToScan.forEach(g => {
+                const key = `k${g}_${subject}`;
+                if (QUESTION_DATABASE[key]) {
+                    pool = pool.concat(QUESTION_DATABASE[key]);
+                }
+            });
+
+            const matchingCustom = QUESTION_DATABASE.custom.filter(q => {
+                const matchSub = q.subject === subject;
+                const matchGrade = (grade === 'all') || (q.grade === grade);
+                return matchSub && matchGrade;
+            });
+
+            return pool.concat(matchingCustom);
+        }
+
+        function renderSubjects() {
+            const grid = document.getElementById('subjectGrid');
+            if (!grid) return;
+
+            grid.innerHTML = SUBJECT_METADATA.map(sub => {
+                const isSelected = currentSubject === sub.id;
+                const questions = getQuestionsForSelection(currentGrade, sub.id);
+                const qCount = questions.length;
+
+                return `
+                    <div onclick="selectSubject('${sub.id}')" class="cursor-pointer border-2 transition rounded-2xl p-3 bg-slate-800/90 hover:bg-slate-800 flex flex-col justify-between space-y-2 ${isSelected ? 'border-blue-500 shadow-xl shadow-blue-500/20 bg-slate-800' : 'border-slate-700 hover:border-slate-600'}">
+                        <div class="flex items-center justify-between">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr ${sub.color} flex items-center justify-center text-white text-sm">
+                                <i class="fa-solid ${sub.icon}"></i>
+                            </div>
+                            ${isSelected ? '<span class="text-blue-400 text-xs font-bold"><i class="fa-solid fa-circle-check"></i></span>' : ''}
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-white text-xs">${sub.title}</h4>
+                            <p class="text-[10px] text-slate-400 font-medium">${qCount} Soal Tersedia</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectSubject(subId) {
+            currentSubject = subId;
+            renderSubjects();
+        }
+
+        function startGame() {
+            initAudio();
+            const pool = getQuestionsForSelection(currentGrade, currentSubject);
+            currentQuestions = [...pool];
+
+            if (currentQuestions.length === 0) {
+                if (currentSubject === 'custom') {
+                    alert('Belum ada soal kustom. Silakan buat soal baru melalui Panel Admin.');
+                    openAdminModal();
+                    return;
+                } else {
+                    alert('Belum ada pertanyaan tersedia untuk kombinasi kelas dan mata pelajaran ini.');
+                    return;
+                }
+            }
+
+            currentQuestions.sort(() => Math.random() - 0.5);
+
+            questionIndex = 0;
+            correctAnswersCount = 0;
+            isGameActive = true;
+            isProcessingAnswer = false;
+
+            const gradeObj = GRADE_METADATA.find(g => g.id === currentGrade);
+            const subObj = SUBJECT_METADATA.find(s => s.id === currentSubject);
+
+            document.getElementById('hudGradeBadge').textContent = gradeObj ? gradeObj.label : 'Semua Kelas';
+            document.getElementById('hudSubjectBadge').textContent = subObj ? subObj.title : 'Kuis';
+
+            switchView('game');
+            loadQuestion();
+
+            // Start Super Mario Theme Background Music
+            startMarioBgm();
+        }
+
+        function loadQuestion() {
+            if (questionIndex >= currentQuestions.length) {
+                finishGame();
+                return;
+            }
+
+            const q = currentQuestions[questionIndex];
+
+            document.getElementById('hudCurrentQ').textContent = questionIndex + 1;
+            document.getElementById('hudTotalQ').textContent = currentQuestions.length;
+            document.getElementById('questionText').textContent = q.q;
+            document.getElementById('optAText').textContent = q.a;
+            document.getElementById('optBText').textContent = q.b;
+
+            const boxOptA = document.getElementById('boxOptA');
+            const boxOptB = document.getElementById('boxOptB');
+            if (boxOptA) boxOptA.className = "inline-block bg-slate-900/85 backdrop-blur border-2 border-blue-500/80 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition";
+            if (boxOptB) boxOptB.className = "inline-block bg-slate-900/85 backdrop-blur border-2 border-pink-500/80 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition";
+
+            isProcessingAnswer = false;
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 20;
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                if (!isGameActive || isProcessingAnswer) return;
+                timeLeft--;
+                updateTimerUI();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timeIsUpEvaluate();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('hudTimerText').textContent = `${timeLeft}s`;
+            const pct = (timeLeft / 20) * 100;
+            document.getElementById('hudTimerBar').style.width = `${pct}%`;
+        }
+
+        function timeIsUpEvaluate() {
+            if (isProcessingAnswer) return;
+            isProcessingAnswer = true;
+            
+            const cdOverlay = document.getElementById('countdownOverlay');
+            const cdNumber = document.getElementById('cdNumber');
+
+            if (cdOverlay) cdOverlay.classList.remove('hidden');
+
+            let cdVal = 5;
+            if (cdNumber) cdNumber.textContent = cdVal;
+            playSound('tick');
+
+            const cdInterval = setInterval(() => {
+                cdVal--;
+                if (cdVal > 0) {
+                    if (cdNumber) cdNumber.textContent = cdVal;
+                    playSound('tick');
+                } else {
+                    clearInterval(cdInterval);
+                    if (cdOverlay) cdOverlay.classList.add('hidden');
+                    revealCorrectAnswer();
+                }
+            }, 1000);
+        }
+
+        function revealCorrectAnswer() {
+            const q = currentQuestions[questionIndex];
+
+            correctAnswersCount++;
+            playSound('correct');
+
+            const boxOptA = document.getElementById('boxOptA');
+            const boxOptB = document.getElementById('boxOptB');
+
+            if (q.correct === 'A') {
+                if (boxOptA) boxOptA.className = "inline-block bg-emerald-600/90 border-4 border-emerald-300 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition scale-105 animate-pulse";
+                if (boxOptB) boxOptB.className = "inline-block bg-slate-900/85 backdrop-blur border-2 border-slate-700 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition opacity-30";
+            } else {
+                if (boxOptB) boxOptB.className = "inline-block bg-emerald-600/90 border-4 border-emerald-300 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition scale-105 animate-pulse";
+                if (boxOptA) boxOptA.className = "inline-block bg-slate-900/85 backdrop-blur border-2 border-slate-700 rounded-2xl px-5 py-3 shadow-2xl max-w-full transition opacity-30";
+            }
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 30, spread: 60, origin: { y: 0.6 } });
+            }
+
+            setTimeout(() => {
+                questionIndex++;
+                loadQuestion();
+            }, 2500);
+        }
+
+        function pauseGame() {
+            if (!isGameActive) return;
+            isGameActive = false;
+            clearInterval(timerInterval);
+            stopMarioBgm();
+
+            if (confirm("Ingin menghentikan permainan dan kembali ke menu utama?")) {
+                switchView('menu');
+            } else {
+                isGameActive = true;
+                startTimer();
+                startMarioBgm();
+            }
+        }
+
+        function finishGame() {
+            isGameActive = false;
+            clearInterval(timerInterval);
+            stopMarioBgm();
+
+            playSound('win');
+
+            document.getElementById('resAccuracy').textContent = `${correctAnswersCount} / ${currentQuestions.length}`;
+
+            const accuracyRatio = currentQuestions.length > 0 ? (correctAnswersCount / currentQuestions.length) : 0;
+            const msgBox = document.getElementById('resBadgeMsg');
+
+            if (accuracyRatio === 1) {
+                msgBox.textContent = "🌟 Sempurna! Semua pertanyaan berhasil dijawab dengan benar!";
+                msgBox.className = "bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 text-emerald-300 text-sm font-medium";
+            } else if (accuracyRatio >= 0.7) {
+                msgBox.textContent = "🎉 Kerja Bagus! Pengetahuan kamu sangat baik!";
+                msgBox.className = "bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 text-blue-300 text-sm font-medium";
+            } else {
+                msgBox.textContent = "💪 Tetap Semangat! Belajar lagi untuk meningkatkan skor kamu!";
+                msgBox.className = "bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 text-yellow-300 text-sm font-medium";
+            }
+
+            switchView('result');
+        }
+
+        function switchView(viewName) {
+            activeView = viewName;
+            const menuView = document.getElementById('menuView');
+            const gameView = document.getElementById('gameView');
+            const resultView = document.getElementById('resultView');
+
+            if (menuView) menuView.classList.add('hidden');
+            if (gameView) gameView.classList.add('hidden');
+            if (resultView) resultView.classList.add('hidden');
+
+            if (viewName !== 'game') {
+                stopMarioBgm();
+            }
+
+            if (viewName === 'menu' && menuView) {
+                menuView.classList.remove('hidden');
+                isGameActive = false;
+                renderGradeTabs();
+                renderSubjects();
+            } else if (viewName === 'game' && gameView) {
+                gameView.classList.remove('hidden');
+            } else if (viewName === 'result' && resultView) {
+                resultView.classList.remove('hidden');
+            }
+        }
+
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        window.addEventListener('load', () => {
+            renderGradeTabs();
+            renderSubjects();
+            initCamera();
+
+            // Otomatis mengambil data dari Google Sheets saat aplikasi pertama kali dibuka
+            fetchSheetData();
+        });
+    </script>
+</body>
+</html>
