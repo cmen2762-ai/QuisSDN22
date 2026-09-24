@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MotionQuiz Edu - Game Edukasi Interaktif Kamera</title>
+    <title>MotionQuiz Edu</title>
     
     <!-- Favicon Logo -->
     <link rel="icon" type="image/png" href="https://iili.io/nutWui7.png">
@@ -101,7 +101,7 @@
                     <i class="fa-solid fa-book-bookmark mr-1"></i> Kurikulum SD Terlengkap
                 </span>
                 <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">
-                    Uji <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Pengetahuanmu!</span>
+                    SDN <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">22 TANAH KERAS</span>
                 </h2>
                 <p class="text-slate-300 text-xs md:text-sm">
                     Pilih tingkat kelas dan mata pelajaran. Tentukan jawaban <strong class="text-blue-400">A (Kiri)</strong> atau <strong class="text-pink-400">B (Kanan)</strong> bersama-sama!
@@ -182,7 +182,7 @@
                 <div id="hudTimerContainer" class="flex-1 max-w-xs mx-auto">
                     <div class="flex justify-between items-center text-xs mb-1">
                         <span class="text-slate-400 font-medium"><i class="fa-regular fa-clock text-yellow-400 mr-1"></i> Waktu Pikir</span>
-                        <span id="hudTimerText" class="font-bold text-yellow-400">20s</span>
+                        <span id="hudTimerText" class="font-bold text-yellow-400">10s</span>
                     </div>
                     <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-700">
                         <div id="hudTimerBar" class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 transition-all duration-300" style="width: 100%;"></div>
@@ -572,7 +572,7 @@
         let questionIndex = 0;
         let correctAnswersCount = 0;
         let timerInterval = null;
-        let timeLeft = 20;
+        let timeLeft = 10;
         let isAudioMuted = false;
         let isGameActive = false;
         let isProcessingAnswer = false;
@@ -1338,7 +1338,7 @@
 
         function startTimer() {
             clearInterval(timerInterval);
-            timeLeft = 20;
+            timeLeft = 10;
             updateTimerUI();
 
             timerInterval = setInterval(() => {
@@ -1355,7 +1355,7 @@
 
         function updateTimerUI() {
             document.getElementById('hudTimerText').textContent = `${timeLeft}s`;
-            const pct = (timeLeft / 20) * 100;
+            const pct = (timeLeft / 10) * 100;
             document.getElementById('hudTimerBar').style.width = `${pct}%`;
         }
 
